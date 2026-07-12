@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>扑克牌收集状态</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a5c2a; color: #fff; font-family: 'Microsoft YaHei', sans-serif; min-height: 100vh; padding: 20px; }
+
+  .container { max-width: 760px; margin: 0 auto; }
+
+  h1  { text-align: center; font-size: 26px; margin-bottom: 6px; letter-spacing: 2px; }
+  .subtitle { text-align: center; font-size: 13px; color: #a0d8a0; margin-bottom: 20px; }
+
+  /* 统计条 */
+  .stats { text-align: center; margin-bottom: 16px; font-size: 14px; }
+  .stats span { background: rgba(255,255,255,.12); padding: 4px 14px; border-radius: 12px; margin: 0 4px; }
+
+  /* 大小王区域 */
+  .jokers { display: flex; justify-content: center; gap: 24px; margin-bottom: 20px; }
+
+  /* 牌 — 未拥有：浅灰+半透明，已有：亮白 */
+  .card {
+    width: 56px; height: 78px; border-radius: 6px; border: 2px solid #d8d8d8;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; user-select: none; font-weight: bold; font-size: 16px;
+    transition: all .15s;
+    background: #e0e0e0; color: #bbb;
+    opacity: 0.45;
+    position: relative;
+  }
+  .card:hover { opacity: 0.7; transform: scale(1.08); }
+
+  /* 拥有状态 — 亮白+高亮 */
+  .card.owned {
+    background: #fff;
+    border: 2px solid #4a90d9;
+    color: #222;
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(74,144,217,.55), 0 3px 10px rgba(0,0,0,.20);
+  }
+  .card.owned:hover { opacity: 1; transform: scale(1.08); }
+
+  /* 红心/方块 */
+  .card.suit-red { color: #c0a0a0; }
+  .card.suit-red.owned { color: #c0392b; }
+
+  /* 大小王 */
+  .card.joker-card { width: 72px; height: 96px; font-size: 20px; border-radius: 8px; }
+  .card.joker-card.owned { background: #fff; border-color: #bbb; color: #222; }
+
+  .symbol-top { position: absolute; top: 3px; left: 5px; font-size: 13px; line-height: 1; }
+  .symbol-bot { position: absolute; bottom: 3px; right: 5px; font-size: 13px; line-height: 1; }
+  .rank-center { font-size: 20px; }
+
+  /* 表格 */
+  table { width: 100%; border-collapse: separate; border-spacing: 6px 6px; }
+  th {
+    text-align: center; font-size: 22px; padding: 6px 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+  th:nth-child(1) { color: #222; }  /* 黑桃 */
+  th:nth-child(2) { color: #e74c3c; } /* 红心 */
+  th:nth-child(3) { color: #e74c3c; } /* 方块 */
+  th:nth-child(4) { color: #222; }    /* 梅花 */
+  td { text-align: center; vertical-align: middle; }
+
+  /* 重置按钮 */
+  .footer { text-align: center; margin-top: 24px; }
+  .btn-reset {
+    background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3);
+    padding: 6px 20px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  .btn-reset:hover { background: rgba(255,255,255,.25); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>扑克牌收集状态</h1>
+  <div class="stats">
+    已收集 <span id="count">0</span> / 54
+    <span id="percent">0%</span>
+  </div>
+
+  <!-- 大小王 -->
+  <div class="jokers">
+    <div class="card joker-card" data-card="joker-big" title="大王">
+      <span class="symbol-top">🃏</span>
+      <span class="rank-center">大<br>王</span>
+      <span class="symbol-bot">🃏</span>
+    </div>
+    <div class="card joker-card" data-card="joker-small" title="小王">
+      <span class="symbol-top">🃏</span>
+      <span class="rank-center">小<br>王</span>
+      <span class="symbol-bot">🃏</span>
+    </div>
+  </div>
+
+  <!-- 表格 -->
+  <table id="poker-table">
+    <thead><tr><th>♠</th><th>♥</th><th>♦</th><th>♣</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="footer">
+    <button class="btn-reset" id="btn-reset">重置所有状态</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'poker_collection_state';
+
+  const SUITS = [
+    { name: 'spade',   symbol: '♠', red: false },
+    { name: 'heart',   symbol: '♥', red: true  },
+    { name: 'diamond', symbol: '♦', red: true  },
+    { name: 'club',    symbol: '♣', red: false },
+  ];
+
+  const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  const ALL_CARDS = ['joker-big', 'joker-small'];
+
+  // 构建全部 card id
+  for (let r = 0; r < RANKS.length; r++) {
+    for (let s = 0; s < SUITS.length; s++) {
+      ALL_CARDS.push(SUITS[s].name + '-' + RANKS[r]);
+    }
+  }
+
+  // --- 读写 localStorage ---
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === 'object' && parsed !== null) return parsed;
+      }
+    } catch (_) {}
+    // 默认：全部未拥有
+    const defaults = {};
+    ALL_CARDS.forEach(id => { defaults[id] = false; });
+    return defaults;
+  }
+
+  function saveState(state) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  // --- 渲染 ---
+  let state = loadState();
+
+  function updateStats() {
+    const owned = ALL_CARDS.filter(id => state[id]).length;
+    const total = ALL_CARDS.length;
+    document.getElementById('count').textContent = owned;
+    document.getElementById('percent').textContent = Math.round(owned / total * 100) + '%';
+  }
+
+  function toggleCard(id) {
+    state[id] = !state[id];
+    saveState(state);
+
+    // 更新 DOM
+    const el = document.querySelector('[data-card="' + id + '"]');
+    if (el) {
+      el.classList.toggle('owned', state[id]);
+    }
+    updateStats();
+  }
+
+  function buildCardEl(id, rank, suit) {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.setAttribute('data-card', id);
+    div.title = (suit ? suit.symbol : '') + (rank || id);
+
+    if (suit && suit.red) div.classList.add('suit-red');
+    if (state[id]) div.classList.add('owned');
+
+    // 符号角标
+    if (suit) {
+      const top = document.createElement('span');
+      top.className = 'symbol-top';
+      top.textContent = rank + ' ' + suit.symbol;
+      div.appendChild(top);
+
+      const bot = document.createElement('span');
+      bot.className = 'symbol-bot';
+      bot.textContent = rank + ' ' + suit.symbol;
+      div.appendChild(bot);
+    }
+
+    const center = document.createElement('span');
+    center.className = 'rank-center';
+    center.textContent = rank || '';
+    div.appendChild(center);
+
+    div.addEventListener('click', function() { toggleCard(id); });
+    return div;
+  }
+
+  function renderTable() {
+    const tbody = document.querySelector('#poker-table tbody');
+    tbody.innerHTML = '';
+
+    for (let r = 0; r < RANKS.length; r++) {
+      const tr = document.createElement('tr');
+      for (let s = 0; s < SUITS.length; s++) {
+        const td = document.createElement('td');
+        const id = SUITS[s].name + '-' + RANKS[r];
+        td.appendChild(buildCardEl(id, RANKS[r], SUITS[s]));
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+  }
+
+  function bindJokers() {
+    document.querySelectorAll('.jokers .card').forEach(el => {
+      el.addEventListener('click', function() {
+        toggleCard(this.getAttribute('data-card'));
+      });
+    });
+  }
+
+  // 重置
+  document.getElementById('btn-reset').addEventListener('click', function() {
+    if (!confirm('确定要清除所有收集状态吗？')) return;
+    ALL_CARDS.forEach(id => { state[id] = false; });
+    saveState(state);
+    // 刷新 DOM
+    document.querySelectorAll('.card').forEach(el => el.classList.remove('owned'));
+    updateStats();
+  });
+
+  // 启动
+  bindJokers();
+  renderTable();
+  updateStats();
+})();
+</script>
+</body>
+</html>
