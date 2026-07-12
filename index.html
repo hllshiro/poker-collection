@@ -8,23 +8,30 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #1a5c2a; color: #fff; font-family: 'Microsoft YaHei', sans-serif; min-height: 100vh; padding: 20px; }
 
-  .container { max-width: 860px; margin: 0 auto; }
+  .container { max-width: 860px; margin: 0 auto; position: relative; }
 
   h1  { text-align: center; font-size: 26px; margin-bottom: 20px; letter-spacing: 2px; }
+
+  /* 右上角 GitHub 链接 */
+  .github-link {
+    position: absolute; top: 4px; right: 0;
+    color: rgba(255,255,255,.6); text-decoration: none; font-size: 13px;
+  }
+  .github-link:hover { color: #fff; }
   .subtitle { text-align: center; font-size: 13px; color: #a0d8a0; margin-bottom: 20px; }
 
   /* 三栏主布局 */
-  .main { display: flex; align-items: flex-start; justify-content: center; gap: 24px; }
+  .main { display: flex; align-items: center; justify-content: center; gap: 24px; }
 
   /* 左侧统计 */
-  .stats { flex: 0 0 100px; text-align: center; font-size: 14px; padding-top: 30px; }
+  .stats { flex: 0 0 100px; text-align: center; font-size: 14px; }
   .stats .stat-item { background: rgba(255,255,255,.12); padding: 8px 12px; border-radius: 12px; margin-bottom: 10px; }
 
   /* 中间表格区 */
   .table-wrap { flex: 0 0 auto; }
 
   /* 右侧大小王 */
-  .jokers { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 30px; }
+  .jokers { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 16px; }
 
   /* 牌 — 未拥有：浅灰+半透明，已有：亮白 */
   .card {
@@ -83,7 +90,8 @@
 </head>
 <body>
 <div class="container">
-  <h1>扑克牌收集状态</h1>
+  <h1>记牌器</h1>
+  <a class="github-link" href="https://github.com/hllshiro/poker-collection" target="_blank">GitHub</a>
 
   <div class="main">
     <!-- 左侧：统计 -->
