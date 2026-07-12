@@ -73,10 +73,10 @@
   td { text-align: center; vertical-align: middle; }
 
   /* 重置按钮 */
-  .footer { text-align: center; margin-top: 24px; }
   .btn-reset {
+    display: block; width: 100%; margin-top: 12px;
     background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3);
-    padding: 6px 20px; border-radius: 6px; cursor: pointer; font-size: 13px;
+    padding: 5px 0; border-radius: 6px; cursor: pointer; font-size: 12px;
   }
   .btn-reset:hover { background: rgba(255,255,255,.25); }
 </style>
@@ -90,6 +90,7 @@
     <div class="stats">
       <div class="stat-item">已收集<br><strong id="count">0</strong> / 54</div>
       <div class="stat-item">进度<br><strong id="percent">0%</strong></div>
+      <button class="btn-reset" id="btn-reset">重置</button>
     </div>
 
     <!-- 中间：表格 -->
@@ -113,10 +114,6 @@
         <span class="symbol-bot">🃏</span>
       </div>
     </div>
-  </div>
-
-  <div class="footer">
-    <button class="btn-reset" id="btn-reset">重置所有状态</button>
   </div>
 </div>
 
