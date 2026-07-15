@@ -236,8 +236,10 @@
 
   function bindJokers() {
     document.querySelectorAll('.jokers .card').forEach(el => {
+      const id = el.getAttribute('data-card');
+      if (state[id]) el.classList.add('owned');
       el.addEventListener('click', function() {
-        toggleCard(this.getAttribute('data-card'));
+        toggleCard(id);
       });
     });
   }
