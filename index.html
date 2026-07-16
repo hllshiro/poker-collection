@@ -283,7 +283,7 @@
       reader.onload = function(e) {
         try {
           const data = JSON.parse(e.target.result);
-          if (typeof data !== 'object' || !data['joker-big']) throw new Error();
+          if (typeof data !== 'object' || !('joker-big' in data)) throw new Error();
           state = data;
           saveState(state);
           document.querySelectorAll('.card').forEach(el => {
