@@ -79,13 +79,19 @@
   th:nth-child(4) { color: #222; }    /* 梅花 */
   td { text-align: center; vertical-align: middle; }
 
-  /* 重置按钮 */
+  /* 左侧按钮 */
   .btn-reset {
     display: block; width: 100%; margin-top: 12px;
+    background: #c0392b; color: #fff; border: 1px solid #a93226;
+    padding: 5px 0; border-radius: 6px; cursor: pointer; font-size: 12px;
+  }
+  .btn-reset:hover { background: #e74c3c; }
+  .btn-export, .btn-import {
+    display: block; width: 100%; margin-top: 6px;
     background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3);
     padding: 5px 0; border-radius: 6px; cursor: pointer; font-size: 12px;
   }
-  .btn-reset:hover { background: rgba(255,255,255,.25); }
+  .btn-export:hover, .btn-import:hover { background: rgba(255,255,255,.25); }
 </style>
 </head>
 <body>
@@ -99,6 +105,8 @@
       <div class="stat-item">已收集<br><strong id="count">0</strong> / 54</div>
       <div class="stat-item">进度<br><strong id="percent">0%</strong></div>
       <button class="btn-reset" id="btn-reset">重置</button>
+      <button class="btn-export" id="btn-export">导出</button>
+      <button class="btn-import" id="btn-import">导入</button>
     </div>
 
     <!-- 中间：表格 -->
@@ -252,6 +260,44 @@
     // 刷新 DOM
     document.querySelectorAll('.card').forEach(el => el.classList.remove('owned'));
     updateStats();
+  });
+
+  // 导出
+  document.getElementById('btn-export').addEventListener('click', function() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = '记牌器_' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // 导入
+  document.getElementById('btn-import').addEventListener('click', function() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.json';
+    input.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (typeof data !== 'object' || !data['joker-big']) throw new Error();
+          state = data;
+          saveState(state);
+          document.querySelectorAll('.card').forEach(el => {
+            const id = el.getAttribute('data-card');
+            el.classList.toggle('owned', !!state[id]);
+          });
+          updateStats();
+        } catch (_) {
+          alert('文件格式不正确');
+        }
+      };
+      reader.readAsText(file);
+    });
+    input.click();
   });
 
   // 启动
